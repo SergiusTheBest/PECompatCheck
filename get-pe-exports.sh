@@ -1,12 +1,12 @@
 #!/bin/bash
-# get_pe_exports.sh - Prints names-only list of exported functions from a PE file using readpe to stdout.
+# get-pe-exports.sh - Prints names-only list of exported functions from a PE file using readpe to stdout.
 #
 # Requirements:
 #   - readpe (install with: sudo apt-get install readpe)
 #   - awk (should be installed by default)
 #
 # Usage:
-#   ./get_pe_exports.sh /path/to/file.dll
+#   ./get-pe-exports.sh /path/to/file.dll
 #
 # Skips exports with empty names.
 set -e

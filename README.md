@@ -5,20 +5,20 @@ Simple bash scripts to extract and list exported and imported function names fro
 ## Description
 
 This repository contains two complementary tools for analyzing Windows PE files:
-- **get_pe_exports.sh**: Extracts exported function names from PE files
-- **get_pe_imports.sh**: Extracts imported function names (with their source DLL) from PE files
+- **get-pe-exports.sh**: Extracts exported function names from PE files
+- **get-pe-imports.sh**: Extracts imported function names (with their source DLL) from PE files
 
 Both tools use the `readpe` utility to parse PE files and output clean, plain text lists. This is useful for analyzing Windows binaries, understanding their APIs, or preparing function lists for further processing.
 
 ## Features
 
-### get_pe_exports.sh
+### get-pe-exports.sh
 - Extracts all exported function names from PE files (DLL/EXE)
 - Outputs clean, plain text list of function names
 - Skips exports with empty names
 - Includes error checking for missing dependencies and invalid files
 
-### get_pe_imports.sh
+### get-pe-imports.sh
 - Extracts all imported function names from PE files (DLL/EXE)
 - Outputs two-column format: source DLL/module name and imported function name
 - Skips imports with empty names
@@ -36,74 +36,74 @@ Both tools use the `readpe` utility to parse PE files and output clean, plain te
 
 ## Usage
 
-### get_pe_exports.sh
+### get-pe-exports.sh
 
 Extract exported function names:
 
 ```bash
-./get_pe_exports.sh <path/to/binary.dll|.exe>
+./get-pe-exports.sh <path/to/binary.dll|.exe>
 ```
 
 #### Examples
 
 Extract exports from a DLL:
 ```bash
-./get_pe_exports.sh /path/to/library.dll
+./get-pe-exports.sh /path/to/library.dll
 ```
 
 Save output to a file:
 ```bash
-./get_pe_exports.sh library.dll > exports.txt
+./get-pe-exports.sh library.dll > exports.txt
 ```
 
 Count the number of exports:
 ```bash
-./get_pe_exports.sh library.dll | wc -l
+./get-pe-exports.sh library.dll | wc -l
 ```
 
 Search for specific functions:
 ```bash
-./get_pe_exports.sh library.dll | grep "CreateFile"
+./get-pe-exports.sh library.dll | grep "CreateFile"
 ```
 
-### get_pe_imports.sh
+### get-pe-imports.sh
 
 Extract imported function names with their source DLL:
 
 ```bash
-./get_pe_imports.sh <path/to/binary.dll|.exe>
+./get-pe-imports.sh <path/to/binary.dll|.exe>
 ```
 
 #### Examples
 
 Extract imports from an EXE:
 ```bash
-./get_pe_imports.sh /path/to/program.exe
+./get-pe-imports.sh /path/to/program.exe
 ```
 
 Save output to a file:
 ```bash
-./get_pe_imports.sh program.exe > imports.txt
+./get-pe-imports.sh program.exe > imports.txt
 ```
 
 Filter imports from a specific DLL:
 ```bash
-./get_pe_imports.sh program.exe | grep "^kernel32.dll"
+./get-pe-imports.sh program.exe | grep "^kernel32.dll"
 ```
 
 Count imports from each DLL:
 ```bash
-./get_pe_imports.sh program.exe | awk '{print $1}' | sort | uniq -c
+./get-pe-imports.sh program.exe | awk '{print $1}' | sort | uniq -c
 ```
 
 Get only function names (second column):
 ```bash
-./get_pe_imports.sh program.exe | awk '{print $2}'
+./get-pe-imports.sh program.exe | awk '{print $2}'
 ```
 
 ## Output Format
 
-### get_pe_exports.sh
+### get-pe-exports.sh
 
 The script outputs one function name per line:
 
@@ -114,7 +114,7 @@ FunctionName3
 ...
 ```
 
-### get_pe_imports.sh
+### get-pe-imports.sh
 
 The script outputs two tab-separated columns: source DLL name and imported function name:
 
@@ -137,7 +137,7 @@ Both scripts use the same error codes:
 
 ## How It Works
 
-### get_pe_exports.sh
+### get-pe-exports.sh
 
 1. Validates that a file path was provided
 2. Checks if the file exists
@@ -146,7 +146,7 @@ Both scripts use the same error codes:
 5. Parses the output using `awk` to extract function names
 6. Filters out empty names and outputs the clean list
 
-### get_pe_imports.sh
+### get-pe-imports.sh
 
 1. Validates that a file path was provided
 2. Checks if the file exists

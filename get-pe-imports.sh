@@ -1,12 +1,12 @@
 #!/bin/bash
-# get_pe_imports.sh - Prints names-only list of imported functions from a PE file using readpe to stdout.
+# get-pe-imports.sh - Prints names-only list of imported functions from a PE file using readpe to stdout.
 #
 # Requirements:
 #   - readpe (install with: sudo apt-get install readpe)
 #   - awk (should be installed by default)
 #
 # Usage:
-#   ./get_pe_imports.sh /path/to/file.dll
+#   ./get-pe-imports.sh /path/to/file.dll
 #
 # Skips imports with empty names.
 set -e
