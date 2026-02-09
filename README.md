@@ -4,9 +4,10 @@ Simple bash scripts to extract and list exported and imported function names fro
 
 ## Description
 
-This repository contains two complementary tools for analyzing Windows PE files:
+This repository contains three complementary tools for analyzing Windows PE files:
 - **get-pe-exports.sh**: Extracts exported function names from PE files
 - **get-pe-imports.sh**: Extracts imported function names (with their source DLL) from PE files
+- **resolve-pe-imports.sh**: Validates that all imported functions exist in a baseline directory
 
 Both tools use the `readpe` utility to parse PE files and output clean, plain text lists. This is useful for analyzing Windows binaries, understanding their APIs, or preparing function lists for further processing.
 
@@ -23,6 +24,14 @@ Both tools use the `readpe` utility to parse PE files and output clean, plain te
 - Outputs two-column format: source DLL/module name and imported function name
 - Skips imports with empty names
 - Includes error checking for missing dependencies and invalid files
+
+### resolve-pe-imports.sh
+- Validates that all imported functions from a PE binary exist in baseline export files
+- Case-insensitive module name matching
+- Reports total count of resolved imports and modules on success
+- Lists all unresolved imports with their source modules on failure
+- Supports batch validation (checks all imports before reporting results)
+- Proper separation of output (results to stdout, errors to stderr)
 
 ### General
 - Works on Linux systems (useful for cross-platform development and analysis)
@@ -101,6 +110,63 @@ Get only function names (second column):
 ./get-pe-imports.sh program.exe | awk '{print $2}'
 ```
 
+### resolve-pe-imports.sh
+
+Verify that all imported functions from a PE binary exist in a baseline directory of export files:
+
+```bash
+./resolve-pe-imports.sh <path/to/binary.dll|.exe> <baseline_directory>
+```
+
+#### Description
+
+This script validates whether all imported functions from a PE binary can be resolved against a baseline of export files. It's useful for checking if a binary's dependencies are fully satisfied by a set of available modules.
+
+#### Examples
+
+Check if serial.sys has all its imports resolved:
+```bash
+./resolve-pe-imports.sh serial.sys windows10/
+```
+
+Output on success:
+```
+Successfully resolved 70 imports from 3 modules
+```
+
+Output on failure (unresolved imports):
+```
+HAL.dll	CreateFile
+KERNEL32.dll	WriteProcessMemory
+Error: Found 2 unresolved imports.
+```
+
+#### Baseline Directory Format
+
+The baseline directory should contain `.exports` files named after the modules. File naming pattern: `<module_name>.exports`
+
+Example directory structure:
+```
+windows10/
+  kernel32.dll.exports
+  ntoskrnl.exe.exports
+  hal.dll.exports
+```
+
+Each `.exports` file is a plain text file with one exported function name per line:
+```
+KdComPortInUse
+CreateFileA
+ReadFile
+...
+```
+
+#### Module Name Matching
+
+- Module names are case-insensitive (e.g., `KERNEL32.DLL`, `kernel32.dll`, and `Kernel32.dll` all match)
+- The script appends `.exports` to the lowercase module name when searching for files
+- All imported function names must exactly match function names in the corresponding export file
+
 ## Output Format
 
 ### get-pe-exports.sh
@@ -128,12 +194,23 @@ user32.dll	MessageBoxA
 
 ## Error Codes
 
-Both scripts use the same error codes:
+### get-pe-exports.sh and get-pe-imports.sh
 
 - `1`: Invalid usage (no file specified)
 - `2`: Specified file does not exist
 - `3`: `awk` command not found
 - `4`: `readpe` command not found
+
+### resolve-pe-imports.sh
+
+- `0`: All imports successfully resolved
+- `1`: Wrong number of arguments (requires 2 parameters)
+- `2`: PE binary file not found
+- `3`: `awk` command not found
+- `4`: `readpe` command not found
+- `5`: Baseline directory not found or is not a directory
+- `6`: Failed to extract imports (get-pe-imports.sh execution failed)
+- `7`: Missing imports found (unresolved dependencies)
 
 ## How It Works
 
@@ -155,6 +232,20 @@ Both scripts use the same error codes:
 5. Parses the output using `awk` to extract DLL names and imported function names
 6. Filters out empty names and outputs the two-column list
 
+### resolve-pe-imports.sh
+
+1. Validates that exactly 2 parameters are provided (PE binary and baseline directory)
+2. Checks if the PE binary file exists
+3. Checks if the baseline directory exists and is a valid directory
+4. Verifies that required tools (`awk` and `readpe`) are installed
+5. Calls `get-pe-imports.sh` to extract all imports from the PE binary
+6. For each unique module, loads the corresponding `.exports` file from the baseline directory (case-insensitive matching)
+7. Validates that each imported function exists in its corresponding module's export file
+8. Collects all unresolved imports (missing functions or missing modules)
+9. Reports results:
+   - **Success**: Prints total count of resolved imports and unique modules, exits with code 0
+   - **Failure**: Lists all unresolved imports to stdout, error message to stderr, exits with code 7
+
 ## Use Cases
 
 - **Reverse Engineering**: Quickly identify exported and imported APIs in Windows binaries
@@ -162,10 +253,12 @@ Both scripts use the same error codes:
 - **Dependency Analysis**: 
   - Understand what functions a DLL provides (exports)
   - Discover what external functions a binary depends on (imports)
+  - **Verify dependencies are satisfied** (resolve-pe-imports.sh)
 - **Security Analysis**: Identify which system APIs a binary uses
 - **Cross-Platform Development**: Analyze Windows binaries on Linux systems
 - **Automation**: Integrate into build scripts or analysis pipelines
 - **Library Comparison**: Compare exported interfaces between different versions of DLLs
+- **Baseline Validation**: Verify that PE binaries can run in a specific environment by checking if all their imports are provided by available modules (useful for containerization, cross-version compatibility checks, or sandboxed environments)
 
 ## License
 
