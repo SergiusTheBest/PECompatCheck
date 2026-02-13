@@ -36,7 +36,17 @@ if ! command -v readpe &>/dev/null; then
 fi
 
 # Parse readpe output for imported functions with their module names, print to stdout in two columns.
-readpe -i "$BIN" 2>/dev/null | \
+set +e
+OUTPUT=$(readpe -i "$BIN" 2>&1)
+EXIT_CODE=$?
+set -e
+
+if [[ $EXIT_CODE -ne 0 ]]; then
+    echo "Error: Unable to parse PE imports from '$BIN'."
+    exit 5
+fi
+
+echo "$OUTPUT" | \
     awk '
         {
             # First, extract and remove any trailing keyword from the line

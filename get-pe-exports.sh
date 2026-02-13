@@ -36,11 +36,21 @@ if ! command -v readpe &>/dev/null; then
 fi
 
 # Parse readpe output for non-empty Name: fields under Function blocks, print to stdout, and add a trailing newline.
-readpe -e "$BIN" 2>/dev/null | \
+set +e
+OUTPUT=$(readpe -e "$BIN" 2>&1)
+EXIT_CODE=$?
+set -e
+
+if [[ $EXIT_CODE -ne 0 ]]; then
+    echo "Error: Unable to parse PE exports from '$BIN'."
+    exit 5
+fi
+
+echo "$OUTPUT" | \
     awk '
         /^[[:space:]]*Function$/ { in_function=1; next }
         in_function && /^[[:space:]]*Name:[[:space:]]+/ {
-            name=substr($0, index($0,":")+1)
+            name=substr($0, index($0,":") +1)
             gsub(/^[[:space:]]+|[[:space:]]+$/,"",name)
             if(name!="") print name
             in_function=0
