@@ -4,9 +4,10 @@ Simple bash scripts to extract and list exported and imported function names fro
 
 ## Description
 
-This repository contains three complementary tools for analyzing Windows PE files:
+This repository contains four complementary tools for analyzing Windows PE files:
 - **get-pe-exports.sh**: Extracts exported function names from PE files
 - **get-pe-imports.sh**: Extracts imported function names (with their source DLL) from PE files
+- **get-pe-arch.sh**: Determines the architecture (x86, x64, ARM64) of PE files
 - **resolve-pe-imports.sh**: Validates that all imported functions exist in a baseline directory
 
 Both tools use the `readpe` utility to parse PE files and output clean, plain text lists. This is useful for analyzing Windows binaries, understanding their APIs, or preparing function lists for further processing.
@@ -23,6 +24,12 @@ Both tools use the `readpe` utility to parse PE files and output clean, plain te
 - Extracts all imported function names from PE files (DLL/EXE)
 - Outputs two-column format: source DLL/module name and imported function name
 - Skips imports with empty names
+- Includes error checking for missing dependencies and invalid files
+
+### get-pe-arch.sh
+- Determines the architecture of PE files (DLL/EXE/SYS)
+- Outputs architecture as: `x86`, `x64`, or `ARM64`
+- For unknown architectures, outputs the raw machine type hex value
 - Includes error checking for missing dependencies and invalid files
 
 ### resolve-pe-imports.sh
@@ -110,6 +117,50 @@ Get only function names (second column):
 ./get-pe-imports.sh program.exe | awk '{print $2}'
 ```
 
+### get-pe-arch.sh
+
+Determine the architecture of a PE file:
+
+```bash
+./get-pe-arch.sh <path/to/binary.dll|.exe|.sys>
+```
+
+#### Examples
+
+Check the architecture of a driver:
+```bash
+./get-pe-arch.sh /path/to/driver.sys
+```
+
+Output:
+```
+x64
+```
+
+Batch check multiple files:
+```bash
+for file in *.sys; do echo "$file: $(./get-pe-arch.sh "$file")"; done
+```
+
+Filter only x64 files:
+```bash
+for file in *.dll; do
+  arch=$(./get-pe-arch.sh "$file" 2>/dev/null)
+  if [[ "$arch" == "x64" ]]; then
+    echo "$file"
+  fi
+done
+```
+
+Use in a script to verify architecture:
+```bash
+arch=$(./get-pe-arch.sh myapp.exe)
+if [[ "$arch" != "x64" ]]; then
+  echo "Error: Expected x64 binary but got $arch"
+  exit 1
+fi
+```
+
 ### resolve-pe-imports.sh
 
 Verify that all imported functions from a PE binary exist in a baseline directory of export files:
@@ -192,14 +243,29 @@ user32.dll	MessageBoxA
 ...
 ```
 
+### get-pe-arch.sh
+
+The script outputs the architecture on a single line:
+
+```
+x64
+```
+
+Possible outputs:
+- `x86` - 32-bit Intel architecture (machine type 0x14c)
+- `x64` - 64-bit AMD64/Intel 64 architecture (machine type 0x8664)
+- `ARM64` - 64-bit ARM architecture (machine type 0xaa64)
+- `0x<hex>` - Raw machine type value for unknown architectures
+
 ## Error Codes
 
-### get-pe-exports.sh and get-pe-imports.sh
+### get-pe-exports.sh, get-pe-imports.sh, and get-pe-arch.sh
 
 - `1`: Invalid usage (no file specified)
 - `2`: Specified file does not exist
 - `3`: `awk` command not found
 - `4`: `readpe` command not found
+- `5`: Unable to parse PE file (not a valid PE file)
 
 ### resolve-pe-imports.sh
 
@@ -232,6 +298,16 @@ user32.dll	MessageBoxA
 5. Parses the output using `awk` to extract DLL names and imported function names
 6. Filters out empty names and outputs the two-column list
 
+### get-pe-arch.sh
+
+1. Validates that a file path was provided
+2. Checks if the file exists
+3. Verifies that required tools (`awk` and `readpe`) are installed
+4. Runs `readpe -h coff` to extract COFF header information
+5. Parses the Machine field to get the machine type hex value
+6. Maps known architectures (0x14c → x86, 0x8664 → x64, 0xaa64 → ARM64)
+7. Outputs the architecture name or raw hex value for unknown types
+
 ### resolve-pe-imports.sh
 
 1. Validates that exactly 2 parameters are provided (PE binary and baseline directory)
@@ -254,6 +330,11 @@ user32.dll	MessageBoxA
   - Understand what functions a DLL provides (exports)
   - Discover what external functions a binary depends on (imports)
   - **Verify dependencies are satisfied** (resolve-pe-imports.sh)
+- **Architecture Detection**:
+  - Verify binary architecture before deployment
+  - Sort binaries by architecture in build pipelines
+  - Ensure correct architecture for target platform (x86, x64, ARM64)
+  - Batch analyze multiple PE files to identify their architectures
 - **Security Analysis**: Identify which system APIs a binary uses
 - **Cross-Platform Development**: Analyze Windows binaries on Linux systems
 - **Automation**: Integrate into build scripts or analysis pipelines
