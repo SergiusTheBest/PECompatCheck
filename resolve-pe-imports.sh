@@ -5,6 +5,7 @@
 #   - readpe (install with: sudo apt-get install readpe)
 #   - awk (should be installed by default)
 #   - get-pe-imports.sh (in same directory)
+#   - get-pe-arch.sh (in same directory)
 #
 # Usage:
 #   ./resolve-pe-imports.sh /path/to/binary.dll /path/to/baseline/directory
@@ -18,6 +19,7 @@
 #   5: Baseline directory not found or invalid
 #   6: get-pe-imports.sh execution failed
 #   7: Missing imports found (unresolved dependencies)
+#   8: Failed to determine PE architecture
 set -e
 
 if [[ $# -ne 2 ]]; then
@@ -49,7 +51,24 @@ if ! command -v readpe &>/dev/null; then
     exit 4
 fi
 
-# Check baseline directory exists and is a directory
+# Determine binary architecture and resolve baseline directory.
+ARCH=$("$SCRIPT_DIR/get-pe-arch.sh" "$BIN" 2>/dev/null) || {
+    echo "Error: Failed to determine architecture for '$BIN'."
+    exit 8
+}
+
+BASELINE_DIR_TRIMMED="${BASELINE_DIR%/}"
+[[ -z "$BASELINE_DIR_TRIMMED" ]] && BASELINE_DIR_TRIMMED="$BASELINE_DIR"
+
+BASELINE_BASENAME=$(basename "$BASELINE_DIR_TRIMMED")
+
+if [[ "$BASELINE_BASENAME" != "$ARCH" ]]; then
+    BASELINE_DIR="$BASELINE_DIR_TRIMMED/$ARCH"
+else
+    BASELINE_DIR="$BASELINE_DIR_TRIMMED"
+fi
+
+# Check resolved baseline directory exists and is a directory
 if [[ ! -d "$BASELINE_DIR" ]]; then
     echo "Error: Baseline directory '$BASELINE_DIR' not found or is not a directory."
     exit 5

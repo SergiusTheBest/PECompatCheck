@@ -11,7 +11,7 @@
 # Output:
 #   x86   - for 32-bit Intel (0x14c)
 #   x64   - for 64-bit AMD64 (0x8664)
-#   ARM64 - for ARM64 (0xaa64)
+#   arm64 - for ARM64 (0xaa64)
 #   <hex> - raw machine type value for unknown architectures
 set -e
 
@@ -50,7 +50,7 @@ ARCH=$(readpe -h coff "$BIN" 2>/dev/null | \
                 # Map known architectures
                 if (hex == "0x14c") print "x86"
                 else if (hex == "0x8664") print "x64"
-                else if (hex == "0xaa64") print "ARM64"
+                else if (hex == "0xaa64") print "arm64"
                 else print hex
             }
             exit

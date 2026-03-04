@@ -7,7 +7,7 @@ Simple bash scripts to extract and list exported and imported function names fro
 This repository contains four complementary tools for analyzing Windows PE files:
 - **get-pe-exports.sh**: Extracts exported function names from PE files
 - **get-pe-imports.sh**: Extracts imported function names (with their source DLL) from PE files
-- **get-pe-arch.sh**: Determines the architecture (x86, x64, ARM64) of PE files
+- **get-pe-arch.sh**: Determines the architecture (x86, x64, arm64) of PE files
 - **resolve-pe-imports.sh**: Validates that all imported functions exist in a baseline directory
 
 Both tools use the `readpe` utility to parse PE files and output clean, plain text lists. This is useful for analyzing Windows binaries, understanding their APIs, or preparing function lists for further processing.
@@ -28,12 +28,13 @@ Both tools use the `readpe` utility to parse PE files and output clean, plain te
 
 ### get-pe-arch.sh
 - Determines the architecture of PE files (DLL/EXE/SYS)
-- Outputs architecture as: `x86`, `x64`, or `ARM64`
+- Outputs architecture as: `x86`, `x64`, or `arm64`
 - For unknown architectures, outputs the raw machine type hex value
 - Includes error checking for missing dependencies and invalid files
 
 ### resolve-pe-imports.sh
 - Validates that all imported functions from a PE binary exist in baseline export files
+- Automatically resolves architecture-specific baseline path (e.g., appends `x86`, `x64`, or `arm64` when needed)
 - Case-insensitive module name matching
 - Reports total count of resolved imports and modules on success
 - Lists all unresolved imports with their source modules on failure
@@ -169,6 +170,8 @@ Verify that all imported functions from a PE binary exist in a baseline director
 ./resolve-pe-imports.sh <path/to/binary.dll|.exe> <baseline_directory>
 ```
 
+If `<baseline_directory>` does not already end with the binary architecture, the script appends it automatically.
+
 #### Description
 
 This script validates whether all imported functions from a PE binary can be resolved against a baseline of export files. It's useful for checking if a binary's dependencies are fully satisfied by a set of available modules.
@@ -179,6 +182,8 @@ Check if serial.sys has all its imports resolved:
 ```bash
 ./resolve-pe-imports.sh serial.sys windows10/
 ```
+
+If `serial.sys` is `x64`, the script resolves this to `windows10/x64` automatically.
 
 Output on success:
 ```
@@ -195,6 +200,10 @@ Error: Found 2 unresolved imports.
 #### Baseline Directory Format
 
 The baseline directory should contain `.exports` files named after the modules. File naming pattern: `<module_name>.exports`
+
+You can pass either:
+- an architecture root directory (for example, `windows10/`) and let the script append the detected architecture subdirectory, or
+- a directory that already includes the architecture (for example, `windows10/x64/`), in which case it is used as-is.
 
 Example directory structure:
 ```
@@ -254,7 +263,7 @@ x64
 Possible outputs:
 - `x86` - 32-bit Intel architecture (machine type 0x14c)
 - `x64` - 64-bit AMD64/Intel 64 architecture (machine type 0x8664)
-- `ARM64` - 64-bit ARM architecture (machine type 0xaa64)
+- `arm64` - 64-bit ARM architecture (machine type 0xaa64)
 - `0x<hex>` - Raw machine type value for unknown architectures
 
 ## Error Codes
@@ -277,6 +286,7 @@ Possible outputs:
 - `5`: Baseline directory not found or is not a directory
 - `6`: Failed to extract imports (get-pe-imports.sh execution failed)
 - `7`: Missing imports found (unresolved dependencies)
+- `8`: Failed to determine PE architecture
 
 ## How It Works
 
@@ -305,20 +315,24 @@ Possible outputs:
 3. Verifies that required tools (`awk` and `readpe`) are installed
 4. Runs `readpe -h coff` to extract COFF header information
 5. Parses the Machine field to get the machine type hex value
-6. Maps known architectures (0x14c → x86, 0x8664 → x64, 0xaa64 → ARM64)
+6. Maps known architectures (0x14c → x86, 0x8664 → x64, 0xaa64 → arm64)
 7. Outputs the architecture name or raw hex value for unknown types
 
 ### resolve-pe-imports.sh
 
 1. Validates that exactly 2 parameters are provided (PE binary and baseline directory)
 2. Checks if the PE binary file exists
-3. Checks if the baseline directory exists and is a valid directory
-4. Verifies that required tools (`awk` and `readpe`) are installed
-5. Calls `get-pe-imports.sh` to extract all imports from the PE binary
-6. For each unique module, loads the corresponding `.exports` file from the baseline directory (case-insensitive matching)
-7. Validates that each imported function exists in its corresponding module's export file
-8. Collects all unresolved imports (missing functions or missing modules)
-9. Reports results:
+3. Verifies that required tools (`awk` and `readpe`) are installed
+4. Detects PE architecture using `get-pe-arch.sh`
+5. Resolves the effective baseline directory:
+  - appends the detected architecture subdirectory if missing
+  - keeps the path unchanged if it already ends with that architecture
+6. Checks if the resolved baseline directory exists and is valid
+7. Calls `get-pe-imports.sh` to extract all imports from the PE binary
+8. For each unique module, loads the corresponding `.exports` file from the baseline directory (case-insensitive matching)
+9. Validates that each imported function exists in its corresponding module's export file
+10. Collects all unresolved imports (missing functions or missing modules)
+11. Reports results:
    - **Success**: Prints total count of resolved imports and unique modules, exits with code 0
    - **Failure**: Lists all unresolved imports to stdout, error message to stderr, exits with code 7
 
@@ -333,7 +347,7 @@ Possible outputs:
 - **Architecture Detection**:
   - Verify binary architecture before deployment
   - Sort binaries by architecture in build pipelines
-  - Ensure correct architecture for target platform (x86, x64, ARM64)
+  - Ensure correct architecture for target platform (x86, x64, arm64)
   - Batch analyze multiple PE files to identify their architectures
 - **Security Analysis**: Identify which system APIs a binary uses
 - **Cross-Platform Development**: Analyze Windows binaries on Linux systems
