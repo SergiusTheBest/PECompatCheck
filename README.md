@@ -1,6 +1,6 @@
-# GetPEExports
+# PECompatCheck
 
-Simple bash scripts to extract and list exported and imported function names from Windows PE (Portable Executable) files (DLL and EXE).
+Simple bash scripts to analyze Windows PE (Portable Executable) files and validate whether binaries—especially drivers—can run on a specific Windows version.
 
 ## Description
 
@@ -10,7 +10,19 @@ This repository contains four complementary tools for analyzing Windows PE files
 - **get-pe-arch.sh**: Determines the architecture (x86, x64, arm64) of PE files
 - **resolve-pe-imports.sh**: Validates that all imported functions exist in a baseline directory
 
-Both tools use the `readpe` utility to parse PE files and output clean, plain text lists. This is useful for analyzing Windows binaries, understanding their APIs, or preparing function lists for further processing.
+The main goal is driver compatibility validation: check whether a PE binary can run on a target Windows version by resolving all imported APIs against that version's baseline exports.
+
+All tools use the `readpe` utility to parse PE files and output clean, plain text lists. This is useful for analyzing Windows binaries, understanding their APIs, and validating compatibility with older Windows targets.
+
+## Included Baseline Windows Versions
+
+Current bundled baseline data:
+
+- **Windows Vista SP2** (`6.0.6002.18005`)
+  - `baseline/vista-sp2/x86`
+  - `baseline/vista-sp2/x64`
+
+You can add additional Windows version baselines under `baseline/` using the same structure.
 
 ## Features
 
@@ -180,10 +192,10 @@ This script validates whether all imported functions from a PE binary can be res
 
 Check if serial.sys has all its imports resolved:
 ```bash
-./resolve-pe-imports.sh serial.sys windows10/
+./resolve-pe-imports.sh serial.sys baseline/vista-sp2/
 ```
 
-If `serial.sys` is `x64`, the script resolves this to `windows10/x64` automatically.
+If `serial.sys` is `x64`, the script resolves this to `baseline/vista-sp2/x64` automatically.
 
 Output on success:
 ```
@@ -202,15 +214,21 @@ Error: Found 2 unresolved imports.
 The baseline directory should contain `.exports` files named after the modules. File naming pattern: `<module_name>.exports`
 
 You can pass either:
-- an architecture root directory (for example, `windows10/`) and let the script append the detected architecture subdirectory, or
-- a directory that already includes the architecture (for example, `windows10/x64/`), in which case it is used as-is.
+- an architecture root directory (for example, `baseline/vista-sp2/`) and let the script append the detected architecture subdirectory, or
+- a directory that already includes the architecture (for example, `baseline/vista-sp2/x64/`), in which case it is used as-is.
 
 Example directory structure:
 ```
-windows10/
-  kernel32.dll.exports
-  ntoskrnl.exe.exports
-  hal.dll.exports
+baseline/
+  vista-sp2/
+    x64/
+      kernel32.dll.exports
+      ntoskrnl.exe.exports
+      hal.dll.exports
+    x86/
+      kernel32.dll.exports
+      ntoskrnl.exe.exports
+      hal.dll.exports
 ```
 
 Each `.exports` file is a plain text file with one exported function name per line:
@@ -337,6 +355,8 @@ Possible outputs:
    - **Failure**: Lists all unresolved imports to stdout, error message to stderr, exits with code 7
 
 ## Use Cases
+
+- **Driver Compatibility Validation**: Verify that driver binaries can run on specific (including older) Windows versions by resolving imports against version-specific baselines
 
 - **Reverse Engineering**: Quickly identify exported and imported APIs in Windows binaries
 - **API Documentation**: Generate function lists for documentation
