@@ -52,6 +52,8 @@ echo "$OUTPUT" | \
         in_function && /^[[:space:]]*Name:[[:space:]]+/ {
             name=substr($0, index($0,":") +1)
             gsub(/^[[:space:]]+|[[:space:]]+$/,"",name)
+            sub(/[[:space:]]*->[[:space:]]*.*/,"",name)
+            gsub(/^[[:space:]]+|[[:space:]]+$/,"",name)
             if(name!="") print name
             in_function=0
         }
