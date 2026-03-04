@@ -87,8 +87,8 @@ NdisCoRequest
 NdisCoRequestComplete
 NdisCoSendNetBufferLists
 NdisCoSendPackets
-NdisCompareAnsiString -> NTOSKRNL.RtlCompareString
-NdisCompareUnicodeString -> NTOSKRNL.RtlCompareUnicodeString
+NdisCompareAnsiString
+NdisCompareUnicodeString
 NdisCompleteBindAdapter
 NdisCompleteBindAdapterEx
 NdisCompleteDmaTransfer
@@ -116,7 +116,7 @@ NdisDprFreePacketNonInterlocked
 NdisDprReleaseReadWriteLock
 NdisDprReleaseSpinLock
 NdisEnumerateFilterModules
-NdisEqualString -> NTOSKRNL.RtlEqualUnicodeString
+NdisEqualString
 NdisFCancelDirectOidRequest
 NdisFCancelOidRequest
 NdisFCancelSendNetBufferLists
@@ -220,15 +220,15 @@ NdisImmediateWritePortUchar
 NdisImmediateWritePortUlong
 NdisImmediateWritePortUshort
 NdisImmediateWriteSharedMemory
-NdisInitAnsiString -> NTOSKRNL.RtlInitAnsiString
-NdisInitUnicodeString -> NTOSKRNL.RtlInitUnicodeString
+NdisInitAnsiString
+NdisInitUnicodeString
 NdisInitializeEvent
 NdisInitializeReadWriteLock
 NdisInitializeString
 NdisInitializeTimer
 NdisInitializeWrapper
 NdisInitiateOffload
-NdisInterlockedAddLargeInterger -> NTOSKRNL.ExInterlockedAddLargeInteger
+NdisInterlockedAddLargeInterger
 NdisInterlockedAddUlong
 NdisInterlockedDecrement
 NdisInterlockedIncrement
